@@ -1,9 +1,6 @@
 import argparse
-import os
 
-from submodule.func import calc_box_width
-from submodule.func import create_checker
-from submodule.func import wrt_checker
+from submodule.checker_board import CheckerBoard
 
 parser = argparse.ArgumentParser(description="Creat a checker board for "
                                              "camera calibration.",
@@ -22,7 +19,7 @@ parser.add_argument("-n", "--number",
                     help="Number of black boxes per line.",
                     )
 parser.add_argument("-r", "--ratio",
-                    type=float, default=0.8,
+                    type=float, default=0.6,
                     help="Duty ratio of the width of black, ie. 0.8.",
                     )
 parser.add_argument("-o", "--output",
@@ -33,20 +30,9 @@ parser.add_argument("-o", "--output",
 if __name__ == "__main__":
     parse = parser.parse_args()
 
-    checker = create_checker(size=min(parse.screen_resolution),
-                             number=parse.number,
-                             ratio=parse.ratio,
-                             )
-    box_side_length = calc_box_width(size=parse.screen_size,
-                                     resolution=parse.screen_resolution,
-                                     number=parse.number,
-                                     ratio=parse.ratio,
-                                     )
-    name = "checker_board_s%f_R%d_n%d_r%f_l%fmm.png" \
-           % (parse.sreen_size,
-              min(parse.screen_resolution),
-              parse.number,
-              parse.ratio,
-              box_side_length,
-              )
-    wrt_checker(checker=checker, path=os.path.join(parse.path, name))
+    checker = CheckerBoard(screen_size=parse.screen_size,
+                           resolution=parse.screen_resolution,
+                           number=parse.number,
+                           ratio=parse.ratio,
+                           )
+    checker.write(parse.output)
