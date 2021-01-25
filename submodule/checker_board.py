@@ -4,22 +4,41 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class CheckerBoard(object):
+def calc_box_width_mm(screen_size: float,
+                      screen_resolution: list,
+                      box_width_px: int,
+                      ) -> float:
+    """Calculate box's width(mm) in real world.
+
+    :param screen_size: Screen size(inch).
+    :param screen_resolution: Screen resolution.
+    :param box_width_px: Box's width(pixel).
+
+    :return: Box's width(mm) in real world.
+    """
+    return box_width_px * screen_size * 25.4 \
+           / (1 + (max(screen_resolution) / min(screen_resolution)
+                   ) ** 2
+              ) ** 0.5 \
+           / min(screen_resolution)
+
+
+class SparseCheckerBoard(object):
     def __init__(self,
                  screen_size: float,
-                 resolution: list,
+                 screen_resolution: list,
                  number: int,
                  ratio: float,
                  ):
         """
 
         :param screen_size: Screen size(inch).
-        :param resolution: Screen resolution.
+        :param screen_resolution: Screen resolution.
         :param number: Number of black boxes per line.
         :param ratio: Duty ratio of the width of black box.
         """
         self.__screen_size = screen_size
-        self.__resolution = resolution
+        self.__resolution = screen_resolution
         self.__number = number
         self.__ratio = ratio
 
@@ -30,7 +49,10 @@ class CheckerBoard(object):
 
         self.__checker = self.__create_checker()
 
-        self.__width_black_mm = self.__calc_black_width_mm()
+        self.__width_black_mm \
+            = calc_box_width_mm(screen_size=screen_size,
+                                screen_resolution=screen_resolution,
+                                box_width_px=self.__width_black_px)
 
     def get_checker(self) -> np.ndarray:
         """Get checker board."""
@@ -58,8 +80,9 @@ class CheckerBoard(object):
 
         :return: Checker board.
         """
-        ret = np.ones(self.__width_board * self.__width_board, dtype=np.bool)
-        ret = ret.reshape(self.__width_board, self.__width_board)
+        ret = np.ones(self.__width_board * self.__width_board,
+                      dtype=np.bool
+                      ).reshape(self.__width_board, -1)
 
         i = 0
         for i in range(self.__number):
@@ -76,17 +99,6 @@ class CheckerBoard(object):
 
         return ret
 
-    def __calc_black_width_mm(self) -> float:
-        """Calculate black box's width in real world.
-
-        :return: Black box's width(mm) in real world.
-        """
-        return self.__width_black_px * self.__screen_size * 25.4 \
-               / (1 + (max(self.__resolution) / min(self.__resolution)
-                       ) ** 2
-                  ) ** 0.5 \
-               / min(self.__resolution)
-
     def write(self, path):
         name = "checker_board_s%.1f_R%dx%d_n%d_r%.1f_w%fmm.png" \
                % (self.__screen_size,
@@ -98,5 +110,67 @@ class CheckerBoard(object):
                   )
         plt.imsave(fname=os.path.join(path, name),
                    arr=self.__checker,
+                   cmap="binary",
+                   )
+
+
+class CrossCheckerBoard(object):
+    def __init__(self,
+                 screen_size: float,
+                 screen_resolution: list,
+                 n: int,
+                 margin: int,
+                 ):
+        """
+
+        :param screen_size: Screen size(inch).
+        :param screen_resolution: Screen resolution.
+        :param n: The number of boxes per line.
+        :param margin: White margin width(pixel).
+        """
+        self.__scr_sz = screen_size
+        self.__scr_res = screen_resolution
+        self.__n = n
+        self.__margin = margin
+
+        self.__checker_board = self.__create_checker_board()
+
+        self.__box_width_mm = \
+            calc_box_width_mm(screen_size=screen_size,
+                              screen_resolution=screen_resolution,
+                              box_width_px=self.__box_width_px)
+
+    def __create_checker_board(self) -> np.ndarray:
+        """Create a checker board."""
+        ret = np.zeros(shape=min(self.__scr_res) ** 2,
+                       dtype=bool,
+                       ).reshape(min(self.__scr_res), -1
+                                 )
+        obj: np.ndarray = ret[self.__margin: -self.__margin,
+                              self.__margin: -self.__margin
+                              ]
+        self.__box_width_px = int(obj.shape[0] / self.__n)
+
+        for c in range(self.__n):
+            for r in range(self.__n):
+                if (c % 2) ^ (r % 2):
+                    continue
+                obj[self.__box_width_px * r: self.__box_width_px * (1 + r),
+                    self.__box_width_px * c: self.__box_width_px * (1 + c),
+                    ] = True
+        return ret
+
+    def write(self, directory: str):
+        """Save checker board as an image."""
+        name = "cross_checker_board_s%.1f_R%dx%d_n%d_m%d_w%f.jpg" \
+               % (self.__scr_sz,
+                  self.__scr_res[0],
+                  self.__scr_res[1],
+                  self.__n,
+                  self.__margin,
+                  self.__box_width_mm,
+                  )
+        plt.imsave(fname=os.path.join(directory, name),
+                   arr=self.__checker_board,
                    cmap="binary",
                    )

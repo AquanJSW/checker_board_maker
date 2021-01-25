@@ -1,6 +1,6 @@
 import argparse
 
-from submodule.checker_board import CheckerBoard
+from submodule.checker_board import SparseCheckerBoard
 
 parser = argparse.ArgumentParser(description="Creat a checker board for "
                                              "camera calibration.",
@@ -30,9 +30,9 @@ parser.add_argument("-o", "--output",
 if __name__ == "__main__":
     parse = parser.parse_args()
 
-    checker = CheckerBoard(screen_size=parse.screen_size,
-                           resolution=parse.screen_resolution,
-                           number=parse.number,
-                           ratio=parse.ratio,
-                           )
+    checker = SparseCheckerBoard(screen_size=parse.screen_size,
+                                 screen_resolution=parse.screen_resolution,
+                                 number=parse.number,
+                                 ratio=parse.ratio,
+                                 )
     checker.write(parse.output)
